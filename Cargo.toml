@@ -1,0 +1,15 @@
+[package]
+name = "tuyau"
+description = """
+tuyau
+"""
+version = "0.0.0"
+
+license = "Apache-2.0"
+edition = "2021"
+
+[[bin]]
+name = "tuyau"
+path = "main.rs"
+
+[dependencies]
