@@ -13,3 +13,7 @@ name = "tuyau"
 path = "main.rs"
 
 [dependencies]
+ruma = { git = "https://github.com/ruma/ruma.git", features = [
+    "client-api",
+    "federation-api",
+], default-features = false }
