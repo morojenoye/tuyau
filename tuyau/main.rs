@@ -1,9 +1,9 @@
 use ruma::events::pdu::RoomV3Pdu;
 
-mod confconf;
-mod executor;
 mod models;
 mod router;
+mod setups;
+mod worker;
 
 pub type MyResult<T> = anyhow::Result<T>;
 pub type MaybePdu = Option<RoomV3Pdu>;
