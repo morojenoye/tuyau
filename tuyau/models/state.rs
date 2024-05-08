@@ -1,4 +1,4 @@
-use crate::{worker::state, models::QueryExecutor};
+use crate::{models::QueryExecutor, worker::state};
 
 // Models
 

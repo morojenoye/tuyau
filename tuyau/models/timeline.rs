@@ -4,7 +4,7 @@ use sea_orm::{
 	DeriveRelation, EntityTrait, EnumIter, PrimaryKeyTrait,
 };
 
-use crate::{worker::timeline, models::QueryExecutor, MaybePdu, MyResult};
+use crate::{models::QueryExecutor, worker::timeline, MaybePdu, MyResult};
 
 // =========================================================================
 
