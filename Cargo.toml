@@ -1,1 +1,1 @@
-workspace = { members = ["tuyau", "tuyau-adapter"], resolver = "2" }
+workspace = { members = ["tuyau"], resolver = "2" }
