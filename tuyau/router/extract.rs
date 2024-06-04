@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use {crate::Global, std::collections::BTreeMap};
 
 use async_trait::async_trait;
 use axum::{
@@ -15,7 +15,7 @@ use ruma::{
 		AuthScheme, IncomingRequest, OutgoingResponse,
 	},
 	server_util::authorization::XMatrix,
-	CanonicalJsonValue,
+	CanonicalJsonValue, OwnedServerName,
 };
 use {bytes::BytesMut, http::StatusCode};
 
@@ -26,25 +26,29 @@ pub struct Ruma<T> {
 	pub body: T,
 }
 
+fn make_unauthorized_error() -> Response {
+	let error_body = ErrorBody::Standard {
+		kind: ErrorKind::Unauthorized,
+		message: String::new(),
+	};
+	let error = error_body.into_error(StatusCode::UNAUTHORIZED);
+
+	let Ok(response) = error.try_into_http_response::<BytesMut>() else {
+		return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+	};
+	return response.map(BytesMut::freeze).map(Body::from);
+}
+
 #[async_trait]
-impl<T, S> FromRequest<S> for Ruma<T>
+impl<T> FromRequest<Global> for Ruma<T>
 where
 	T: IncomingRequest,
 {
 	type Rejection = Response;
 
-	async fn from_request(req: Request<Body>, _: &S) -> Result<Self, Self::Rejection> {
+	async fn from_request(req: Request<Body>, state: &Global) -> Result<Self, Self::Rejection> {
 		let AuthScheme::ServerSignatures = T::METADATA.authentication else {
-			let error_body = ErrorBody::Standard {
-				kind: ErrorKind::Unauthorized,
-				message: String::new(),
-			};
-			let error = error_body.into_error(StatusCode::UNAUTHORIZED);
-
-			let Ok(response) = error.try_into_http_response::<BytesMut>() else {
-				return Err(StatusCode::INTERNAL_SERVER_ERROR.into_response());
-			};
-			return Err(response.map(BytesMut::freeze).map(Body::from));
+			return Err(make_unauthorized_error());
 		};
 		let (mut parts, body) = req.with_limited_body().into_parts();
 
@@ -52,9 +56,15 @@ where
 			Ok(TypedHeader(Authorization(header))) => Ok(header),
 			Err(e) => Err(e.into_response()),
 		}?;
-		if let Some(dest) = header.destination {
-			// Check somehow
+
+		let check = |dest: OwnedServerName| {
+			let differ = dest != state.server_name;
+			differ.then(make_unauthorized_error)
 		};
+		match header.destination.map(check).flatten() {
+			Some(response) => return Err(response),
+			None => (),
+		}
 
 		let signatures = BTreeMap::from([(
 			header.key.to_string(),
