@@ -1,5 +1,6 @@
 use ruma::{RoomId, UserId};
 
+pub mod keyserver;
 pub mod state;
 pub mod timeline;
 

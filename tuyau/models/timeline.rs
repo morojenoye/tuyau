@@ -4,12 +4,16 @@ use sea_orm::{
 	DeriveRelation, EntityTrait, EnumIter, PrimaryKeyTrait,
 };
 
-use crate::{models::QueryExecutor, worker::timeline, MaybePdu, MyResult};
+use crate::{
+	models::{MaybePdu, QueryExecutor},
+	worker::timeline,
+	MyResult,
+};
 
 // =========================================================================
 
 #[derive(Clone, Debug, DeriveEntityModel)]
-#[sea_orm(table_name = "pdu")]
+#[sea_orm(table_name = "timeline")]
 pub struct Model {
 	#[sea_orm(primary_key, unique)]
 	pub pdu_id: String,

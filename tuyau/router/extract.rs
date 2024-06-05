@@ -61,7 +61,6 @@ where
 			Ok(TypedHeader(Authorization(header))) => Ok(header),
 			Err(e) => Err(e.into_response()),
 		}?;
-
 		let check = |dest: OwnedServerName| {
 			let differ = dest != global.server_name;
 			differ.then(make_unauthorized_error)

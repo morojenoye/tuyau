@@ -1,6 +1,6 @@
 use ruma::{events::pdu::RoomV3Pdu, EventId};
 
-use crate::{MaybePdu, MyResult};
+use crate::{models::MaybePdu, MyResult};
 
 pub trait Query {
 	async fn append(&self, pdu_id: &EventId, pdu: &RoomV3Pdu) -> MyResult<()>;
