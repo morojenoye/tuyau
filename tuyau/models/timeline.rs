@@ -5,7 +5,7 @@ use sea_orm::{
 };
 
 use crate::{
-	models::{MaybePdu, QueryExecutor},
+	models::{DefaultQueryExecutor, MaybePdu},
 	worker::timeline,
 	MyResult,
 };
@@ -27,7 +27,7 @@ impl ActiveModelBehavior for ActiveModel {}
 
 // =========================================================================
 
-impl timeline::Query for QueryExecutor {
+impl timeline::QueryExecutor for DefaultQueryExecutor {
 	async fn append(&self, pdu_id: &EventId, pdu: &RoomV3Pdu) -> MyResult<()> {
 		let pdu = serde_json::to_string(pdu)?;
 

@@ -1,5 +1,5 @@
-pub trait Query {}
+pub trait QueryExecutor {}
 
-pub struct Executor<'a, T: Query> {
-	inner: &'a T,
+pub struct Executor<'a, T: QueryExecutor> {
+	pub(super) query_executor: &'a T,
 }

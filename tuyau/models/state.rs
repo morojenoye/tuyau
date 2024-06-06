@@ -1,7 +1,7 @@
-use crate::{models::QueryExecutor, worker::state};
+use crate::{models::DefaultQueryExecutor, worker::state};
 
 // Models
 
 //
 
-impl state::Query for QueryExecutor {}
+impl state::QueryExecutor for DefaultQueryExecutor {}

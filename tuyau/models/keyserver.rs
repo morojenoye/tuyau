@@ -1,14 +1,10 @@
-use ruma::ServerName;
+use ruma::{api::federation::discovery::ServerSigningKeys, ServerName};
 use sea_orm::{
 	ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait,
 	EnumIter, PrimaryKeyTrait,
 };
 
-use crate::{
-	models::{QueryExecutor, ServerKeys},
-	worker::keyserver,
-	MyResult,
-};
+use crate::{models::DefaultQueryExecutor, worker::keyserver, MyResult};
 
 // =========================================================================
 
@@ -27,8 +23,8 @@ impl ActiveModelBehavior for ActiveModel {}
 
 // =========================================================================
 
-impl keyserver::Query for QueryExecutor {
-	fn get_server_keys(server: &ServerName) -> MyResult<ServerKeys> {
+impl keyserver::QueryExecutor for DefaultQueryExecutor {
+	fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
 		todo!()
 	}
 }

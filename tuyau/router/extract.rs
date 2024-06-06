@@ -1,15 +1,16 @@
-use {crate::Global, std::collections::BTreeMap};
-
 use async_trait::async_trait;
+use bytes::BytesMut;
+use std::collections::BTreeMap;
+
 use axum::{
-	body,
-	body::Body,
+	body::{self, Body},
 	extract::{FromRequest, FromRequestParts, Path},
 	http::Request,
-	response::{IntoResponse, Response},
+	response::{IntoResponse, Response as Reply},
 	RequestExt, RequestPartsExt,
 };
 use axum_extra::{headers::Authorization, TypedHeader};
+use http::StatusCode;
 use ruma::{
 	api::{
 		client::error::{ErrorBody, ErrorKind},
@@ -18,8 +19,10 @@ use ruma::{
 	server_util::authorization::XMatrix,
 	CanonicalJsonValue, OwnedServerName,
 };
-use {bytes::BytesMut, http::StatusCode};
 
+use crate::worker::{Executor, QueryExecutor};
+
+type Result<Ty> = std::result::Result<Ty, Reply>;
 type AuthHeader = Authorization<XMatrix>;
 type PathArgs = Vec<String>;
 
@@ -27,11 +30,11 @@ pub struct Ruma<T> {
 	pub body: T,
 }
 
-fn make_internal_server_error() -> Response {
+fn make_internal_server_error() -> Reply {
 	StatusCode::INTERNAL_SERVER_ERROR.into_response()
 }
 
-fn make_unauthorized_error() -> Response {
+fn make_unauthorized_error() -> Reply {
 	let error_body = ErrorBody::Standard {
 		kind: ErrorKind::Unauthorized,
 		message: String::new(),
@@ -45,14 +48,15 @@ fn make_unauthorized_error() -> Response {
 }
 
 #[async_trait]
-impl<T> FromRequest<Global> for Ruma<T>
+impl<'a, R, T> FromRequest<Executor<'a, T>> for Ruma<R>
 where
-	T: IncomingRequest,
+	R: IncomingRequest,
+	T: QueryExecutor,
 {
-	type Rejection = Response;
+	type Rejection = Reply;
 
-	async fn from_request(req: Request<Body>, global: &Global) -> Result<Self, Self::Rejection> {
-		let AuthScheme::ServerSignatures = T::METADATA.authentication else {
+	async fn from_request(req: Request<Body>, ctx: &Executor<'a, T>) -> Result<Self> {
+		let AuthScheme::ServerSignatures = R::METADATA.authentication else {
 			return Err(make_unauthorized_error());
 		};
 		let (mut parts, body) = req.with_limited_body().into_parts();
@@ -62,7 +66,7 @@ where
 			Err(e) => Err(e.into_response()),
 		}?;
 		let check = |dest: OwnedServerName| {
-			let differ = dest != global.server_name;
+			let differ = dest != ctx.server_name;
 			differ.then(make_unauthorized_error)
 		};
 		match header.destination.map(check).flatten() {
@@ -95,7 +99,7 @@ where
 		)]));
 		request_map.insert("signatures".to_string(), signatures);
 
-		let server_name = global.server_name.to_string().into();
+		let server_name = ctx.server_name.to_string().into();
 		let origin = header.origin.to_string().into();
 
 		request_map.insert(keys[2].to_string(), server_name);
@@ -103,7 +107,7 @@ where
 
 		let http_request = http::Request::from_parts(parts, body);
 
-		let body = T::try_from_http_request(http_request, &path_args).unwrap();
+		let body = R::try_from_http_request(http_request, &path_args).unwrap();
 
 		Ok(Ruma { body })
 	}

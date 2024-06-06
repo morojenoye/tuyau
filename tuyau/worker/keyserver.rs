@@ -1,11 +1,17 @@
-use ruma::ServerName;
+use ruma::{api::federation::discovery::ServerSigningKeys, ServerName};
 
-use crate::{models::ServerKeys, MyResult};
+use crate::MyResult;
 
-pub trait Query {
-	fn get_server_keys(server: &ServerName) -> MyResult<ServerKeys>;
+pub trait QueryExecutor {
+	fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys>;
 }
 
-pub struct Executor<'a, T: Query> {
-	inner: &'a T,
+pub struct Executor<'a, T: QueryExecutor> {
+	pub(super) query_executor: &'a T,
+}
+
+impl<'a, T: QueryExecutor> Executor<'a, T> {
+	pub fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
+		self.query_executor.get_server_keys(server)
+	}
 }

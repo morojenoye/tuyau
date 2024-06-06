@@ -1,16 +1,15 @@
-use std::collections::BTreeMap;
+use ruma::events::pdu::RoomV3Pdu;
 
-use ruma::{
-	api::federation::discovery::VerifyKey, events::pdu::RoomV3Pdu, OwnedServerSigningKeyId,
-};
+use crate::worker::QueryExecutor;
 
 pub mod keyserver;
 pub mod state;
 pub mod timeline;
 
-pub type ServerKeys = BTreeMap<OwnedServerSigningKeyId, VerifyKey>;
 pub type MaybePdu = Option<RoomV3Pdu>;
 
-pub struct QueryExecutor {
+pub struct DefaultQueryExecutor {
 	inner: sea_orm::DatabaseConnection,
 }
+
+impl QueryExecutor for DefaultQueryExecutor {}
