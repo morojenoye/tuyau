@@ -1,9 +1,12 @@
+use async_trait::async_trait;
+
 use ruma::{api::federation::discovery::ServerSigningKeys, ServerName};
 
 use crate::MyResult;
 
+#[async_trait]
 pub trait QueryExecutor {
-	fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys>;
+	async fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys>;
 }
 
 pub struct Executor<'a, T: QueryExecutor> {
@@ -11,7 +14,7 @@ pub struct Executor<'a, T: QueryExecutor> {
 }
 
 impl<'a, T: QueryExecutor> Executor<'a, T> {
-	pub fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
-		self.query_executor.get_server_keys(server)
+	pub async fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
+		self.query_executor.get_server_keys(server).await
 	}
 }

@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 use ruma::{api::federation::discovery::ServerSigningKeys, ServerName};
 use sea_orm::{
 	ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait,
@@ -23,8 +25,9 @@ impl ActiveModelBehavior for ActiveModel {}
 
 // =========================================================================
 
+#[async_trait]
 impl keyserver::QueryExecutor for DefaultQueryExecutor {
-	fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
+	async fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
 		todo!()
 	}
 }
