@@ -73,7 +73,7 @@ where
 			Err(e) => Err(e.into_response()),
 		}?;
 		let check = |dest: OwnedServerName| {
-			let differ = dest != ctx.server_name;
+			let differ: bool = dest != ctx.server_name;
 			differ.then(make_unauthorized_error)
 		};
 		match header.destination.map(check).flatten() {
@@ -136,14 +136,14 @@ where
 
 		// =================================================================
 
-		if let Err(_) = verify_json(&p_keys_map, &request_map) {
-			return Err(make_internal_server_error());
+		let http_request: _ = match verify_json(&p_keys_map, &request_map) {
+			Ok(()) => http::Request::from_parts(parts, body),
+			Err(_) => Err(make_unauthorized_error())?,
+		};
+		match R::try_from_http_request(http_request, &path_args) {
+			Ok(body) => Ok(Ruma { body }),
+			Err(_) => Err(make_internal_server_error()),
 		}
-		let http_request = http::Request::from_parts(parts, body);
-
-		let body = R::try_from_http_request(http_request, &path_args).unwrap();
-
-		Ok(Ruma { body })
 	}
 }
 
