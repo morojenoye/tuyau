@@ -14,10 +14,12 @@ use http::StatusCode;
 use ruma::{
 	api::{
 		client::error::{ErrorBody, ErrorKind},
+		federation::discovery::VerifyKey,
 		AuthScheme, IncomingRequest, OutgoingResponse,
 	},
+	serde::Base64,
 	server_util::authorization::XMatrix,
-	CanonicalJsonValue, OwnedServerName,
+	CanonicalJsonValue, OwnedServerName, OwnedServerSigningKeyId,
 };
 
 use crate::worker::{Executor, QueryExecutor};
@@ -105,10 +107,28 @@ where
 		request_map.insert(keys[2].to_string(), server_name);
 		request_map.insert(keys[3].to_string(), origin);
 
+		let (server_keys, mut p_keys_map) = (
+			ctx.keyserver.get_server_keys(&header.origin).await,
+			BTreeMap::new(),
+		);
+		let server_keys: _ = server_keys.map_err(|_| make_internal_server_error())?;
+		let iter: _ = server_keys.verify_keys.into_iter();
+
+		let v: BTreeMap<String, Base64> = iter.map(fmt).collect();
+		p_keys_map.insert(header.origin.to_string(), v);
+
 		let http_request = http::Request::from_parts(parts, body);
 
 		let body = R::try_from_http_request(http_request, &path_args).unwrap();
 
 		Ok(Ruma { body })
 	}
+}
+
+type Input = (OwnedServerSigningKeyId, VerifyKey);
+type Value = (String, Base64);
+
+fn fmt(payloads: Input) -> Value {
+	let (k, v) = payloads;
+	(k.to_string(), v.key)
 }
