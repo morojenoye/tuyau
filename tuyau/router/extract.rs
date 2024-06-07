@@ -1,6 +1,7 @@
+use std::collections::BTreeMap;
+
 use async_trait::async_trait;
 use bytes::BytesMut;
-use std::collections::BTreeMap;
 
 use axum::{
 	body::{self, Body},
@@ -11,6 +12,7 @@ use axum::{
 };
 use axum_extra::{headers::Authorization, TypedHeader};
 use http::StatusCode;
+
 use ruma::{
 	api::{
 		client::error::{ErrorBody, ErrorKind},
