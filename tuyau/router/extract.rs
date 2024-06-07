@@ -68,7 +68,7 @@ where
 
 		// =================================================================
 
-		let header = match parts.extract::<TypedHeader<AuthHeader>>().await {
+		let header: _ = match parts.extract::<TypedHeader<AuthHeader>>().await {
 			Ok(TypedHeader(Authorization(header))) => Ok(header),
 			Err(e) => Err(e.into_response()),
 		}?;
@@ -84,7 +84,7 @@ where
 		// =================================================================
 
 		let keys: [&str; 4] = ["method", "uri", "destination", "origin"];
-		let mut request_map = BTreeMap::new();
+		let mut request_map: _ = BTreeMap::new();
 
 		request_map.insert(keys[0].to_string(), parts.method.to_string().into());
 		request_map.insert(keys[1].to_string(), parts.uri.to_string().into());
@@ -98,7 +98,7 @@ where
 			Path::<PathArgs>::from_request_parts(&mut parts, &()).await.unwrap(),
 			serde_json::from_slice::<CanonicalJsonValue>(&body).ok(),
 		);
-		value.map(|value| request_map.insert("content".to_string(), value));
+		value.map(|value: _| request_map.insert("content".to_string(), value));
 
 		// =================================================================
 
