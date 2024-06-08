@@ -1,82 +1,63 @@
 use std::collections::BTreeMap;
 
 use async_trait::async_trait;
-use bytes::BytesMut;
-
 use axum::{
 	body::{self, Body},
 	extract::{FromRequest, FromRequestParts, Path},
 	http::Request,
-	response::{IntoResponse, Response as Reply},
 	RequestExt, RequestPartsExt,
 };
 use axum_extra::{headers::Authorization, TypedHeader};
-use http::StatusCode;
 
 use ruma::{
-	api::{
-		client::error::{ErrorBody, ErrorKind},
-		federation::discovery::VerifyKey,
-		AuthScheme, IncomingRequest, OutgoingResponse,
-	},
+	api::federation::discovery::VerifyKey,
+	api::{client::error::ErrorKind, AuthScheme, IncomingRequest},
 	serde::Base64,
 	server_util::authorization::XMatrix,
 	signatures::verify_json,
 	CanonicalJsonValue, OwnedServerName, OwnedServerSigningKeyId,
 };
 
-use crate::worker::{Executor, QueryExecutor};
+use crate::{
+	router::reply::MApiReply,
+	worker::{keyserver, Executor, QueryExecutor},
+};
 
-type Result<Ty> = std::result::Result<Ty, Reply>;
+type MyResult<Ty> = std::result::Result<Ty, ErrReply>;
+type ErrReply = MApiReply<ErrorKind>;
+
 type AuthHeader = Authorization<XMatrix>;
 type PathArgs = Vec<String>;
 
-pub struct Ruma<T> {
+pub struct MApi<T> {
 	pub body: T,
 }
 
-fn make_internal_server_error() -> Reply {
-	StatusCode::INTERNAL_SERVER_ERROR.into_response()
-}
-
-fn make_unauthorized_error() -> Reply {
-	let error_body = ErrorBody::Standard {
-		kind: ErrorKind::Unauthorized,
-		message: String::new(),
-	};
-	let error = error_body.into_error(StatusCode::UNAUTHORIZED);
-
-	let Ok(response) = error.try_into_http_response::<BytesMut>() else {
-		return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-	};
-	return response.map(BytesMut::freeze).map(Body::from);
-}
-
 #[async_trait]
-impl<'a, R, T> FromRequest<Executor<'a, T>> for Ruma<R>
+impl<'a, R, T> FromRequest<Executor<'a, T>> for MApi<R>
 where
 	R: IncomingRequest,
 	T: QueryExecutor,
 {
-	type Rejection = Reply;
+	type Rejection = MApiReply<ErrorKind>;
 
-	async fn from_request(req: Request<Body>, ctx: &Executor<'a, T>) -> Result<Self> {
+	async fn from_request(req: Request<Body>, ctx: &Executor<'a, T>) -> MyResult<Self> {
 		// =================================================================
 
 		let AuthScheme::ServerSignatures = R::METADATA.authentication else {
-			return Err(make_unauthorized_error());
+			return Err(MApiReply(ErrorKind::forbidden()));
 		};
 		let (mut parts, body) = req.with_limited_body().into_parts();
 
 		// =================================================================
 
-		let header: _ = match parts.extract::<TypedHeader<AuthHeader>>().await {
+		let header = match parts.extract::<TypedHeader<AuthHeader>>().await {
 			Ok(TypedHeader(Authorization(header))) => Ok(header),
-			Err(e) => Err(e.into_response()),
+			Err(_) => Err(MApiReply(ErrorKind::Unauthorized)),
 		}?;
 		let check = |dest: OwnedServerName| {
 			let differ: bool = dest != ctx.server_name;
-			differ.then(make_unauthorized_error)
+			differ.then_some(MApiReply(ErrorKind::Unauthorized))
 		};
 		match header.destination.map(check).flatten() {
 			Some(response) => return Err(response),
@@ -86,7 +67,7 @@ where
 		// =================================================================
 
 		let keys: [&str; 4] = ["method", "uri", "destination", "origin"];
-		let mut request_map: _ = BTreeMap::new();
+		let mut request_map = BTreeMap::new();
 
 		request_map.insert(keys[0].to_string(), parts.method.to_string().into());
 		request_map.insert(keys[1].to_string(), parts.uri.to_string().into());
@@ -94,7 +75,7 @@ where
 		// =================================================================
 
 		let body = body::to_bytes(body, usize::MAX).await;
-		let body = body.map_err(|_| make_internal_server_error())?;
+		let body = body.map_err(|_| MApiReply(ErrorKind::TooLarge))?;
 
 		let (path_args, value) = (
 			Path::<PathArgs>::from_request_parts(&mut parts, &()).await.unwrap(),
@@ -112,7 +93,7 @@ where
 			header.origin.to_string(),
 			CanonicalJsonValue::Object(signatures),
 		)]);
-		let signatures: _ = CanonicalJsonValue::Object(signatures);
+		let signatures = CanonicalJsonValue::Object(signatures);
 
 		request_map.insert("signatures".to_string(), signatures);
 
@@ -126,25 +107,27 @@ where
 
 		// =================================================================
 
-		let (server_keys, mut p_keys_map) = (
-			ctx.keyserver.get_server_keys(&header.origin).await,
-			BTreeMap::new(),
-		);
-		let server_keys: _ = server_keys.map_err(|_| make_internal_server_error())?;
-		let iter: _ = server_keys.verify_keys.into_iter();
+		let keyserver: &keyserver::Executor<'a, T> = &ctx.keyserver;
+		let server: &OwnedServerName = &header.origin;
 
-		let v: BTreeMap<String, Base64> = iter.map(fmt).collect();
-		p_keys_map.insert(header.origin.to_string(), v);
+		let iter: _ = match keyserver.get_server_keys(server).await {
+			Ok(server_keys) => server_keys.verify_keys.into_iter(),
+			Err(_) => Err(MApiReply(ErrorKind::Unauthorized))?,
+		};
+		let mut p_key_map = BTreeMap::new();
+
+		let v: BTreeMap<_, Base64> = iter.map(fmt).collect();
+		p_key_map.insert(header.origin.to_string(), v);
 
 		// =================================================================
 
-		let http_request: _ = match verify_json(&p_keys_map, &request_map) {
+		let http_request: _ = match verify_json(&p_key_map, &request_map) {
+			Err(_) => Err(MApiReply(ErrorKind::Unauthorized))?,
 			Ok(()) => http::Request::from_parts(parts, body),
-			Err(_) => Err(make_unauthorized_error())?,
 		};
 		match R::try_from_http_request(http_request, &path_args) {
-			Ok(body) => Ok(Ruma { body }),
-			Err(_) => Err(make_internal_server_error()),
+			Err(_) => Err(MApiReply(ErrorKind::BadJson)),
+			Ok(dt) => Ok(MApi { body: dt }),
 		}
 	}
 }
