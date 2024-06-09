@@ -1,5 +1,7 @@
 use ruma::{RoomId, ServerName, UserId};
 
+use crate::setups::Setup;
+
 pub mod keyserver;
 pub mod state;
 pub mod timeline;
@@ -10,19 +12,25 @@ pub trait QueryExecutor:
 }
 
 pub struct Executor<'a, T: QueryExecutor> {
+	// =====================================================================
 	pub keyserver: keyserver::Executor<'a, T>,
 	pub state: state::Executor<'a, T>,
 	pub timeline: timeline::Executor<'a, T>,
+	// =====================================================================
 	pub server_name: &'a ServerName,
+	pub setups: Setup<'a>,
 }
 
 impl<'a, T: QueryExecutor> Executor<'a, T> {
-	pub fn new(query_executor: &'a T, room_id: &'a RoomId, user_id: &UserId) -> Self {
+	pub fn new(query_executor: &'a T, room_id: &'a RoomId, user_id: &'a UserId) -> Self {
 		Self {
+			// =============================================================
 			keyserver: keyserver::Executor { query_executor },
 			state: state::Executor { query_executor },
 			timeline: timeline::Executor { query_executor },
+			// =============================================================
 			server_name: room_id.server_name().unwrap(),
+			setups: Setup { room_id, user_id },
 		}
 	}
 	pub fn get() {}
