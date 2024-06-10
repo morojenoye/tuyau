@@ -11,6 +11,7 @@ pub trait QueryExecutor:
 {
 }
 
+#[derive(Clone)]
 pub struct Executor<'a, T: QueryExecutor> {
 	// =====================================================================
 	pub keyserver: keyserver::Executor<'a, T>,

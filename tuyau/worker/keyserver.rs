@@ -9,12 +9,15 @@ pub trait QueryExecutor {
 	async fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys>;
 }
 
+#[derive(Clone)]
 pub struct Executor<'a, T: QueryExecutor> {
 	pub(super) query_executor: &'a T,
 }
 
 impl<'a, T: QueryExecutor> Executor<'a, T> {
-	pub async fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
-		self.query_executor.get_server_keys(server).await
+	pub async fn get_server_keys(&self, request: &ServerName) -> MyResult<ServerSigningKeys> {
+		let s = ("https", request.host(), "/_matrix/key/v2/server");
+		let s = format!("{}://{}:8448{}", s.0, s.1, s.2);
+		Ok(reqwest::get(s).await?.json().await?)
 	}
 }
