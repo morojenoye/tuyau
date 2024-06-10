@@ -19,12 +19,12 @@ use ruma::{
 };
 
 use crate::{
-	router::reply::MApiReply,
+	router::reply::MApiError,
 	worker::{keyserver, Executor, QueryExecutor},
 };
 
 type MyResult<Ty> = std::result::Result<Ty, ErrReply>;
-type ErrReply = MApiReply<ErrorKind>;
+type ErrReply = MApiError<ErrorKind>;
 
 type AuthHeader = Authorization<XMatrix>;
 type PathArgs = Vec<String>;
@@ -39,13 +39,13 @@ where
 	R: IncomingRequest,
 	T: QueryExecutor,
 {
-	type Rejection = MApiReply<ErrorKind>;
+	type Rejection = MApiError<ErrorKind>;
 
 	async fn from_request(req: Request<Body>, ctx: &Executor<'a, T>) -> MyResult<Self> {
 		// =================================================================
 
 		let AuthScheme::ServerSignatures = R::METADATA.authentication else {
-			return Err(MApiReply(ErrorKind::forbidden()));
+			return Err(MApiError(ErrorKind::forbidden()));
 		};
 		let (mut parts, body) = req.with_limited_body().into_parts();
 
@@ -53,11 +53,11 @@ where
 
 		let header = match parts.extract::<TypedHeader<AuthHeader>>().await {
 			Ok(TypedHeader(Authorization(header))) => Ok(header),
-			Err(_) => Err(MApiReply(ErrorKind::Unauthorized)),
+			Err(_) => Err(MApiError(ErrorKind::Unauthorized)),
 		}?;
 		let check = |dest: OwnedServerName| {
 			let differ: bool = dest != ctx.server_name;
-			differ.then_some(MApiReply(ErrorKind::Unauthorized))
+			differ.then_some(MApiError(ErrorKind::Unauthorized))
 		};
 		match header.destination.map(check).flatten() {
 			Some(response) => return Err(response),
@@ -75,7 +75,7 @@ where
 		// =================================================================
 
 		let body = body::to_bytes(body, usize::MAX).await;
-		let body = body.map_err(|_| MApiReply(ErrorKind::TooLarge))?;
+		let body = body.map_err(|_| MApiError(ErrorKind::TooLarge))?;
 
 		let (path_args, value) = (
 			Path::<PathArgs>::from_request_parts(&mut parts, &()).await.unwrap(),
@@ -112,7 +112,7 @@ where
 
 		let iter: _ = match keyserver.get_server_keys(server).await {
 			Ok(server_keys) => server_keys.verify_keys.into_iter(),
-			Err(_) => Err(MApiReply(ErrorKind::Unauthorized))?,
+			Err(_) => Err(MApiError(ErrorKind::Unauthorized))?,
 		};
 		let mut p_key_map = BTreeMap::new();
 
@@ -122,11 +122,11 @@ where
 		// =================================================================
 
 		let http_request: _ = match verify_json(&p_key_map, &request_map) {
-			Err(_) => Err(MApiReply(ErrorKind::Unauthorized))?,
+			Err(_) => Err(MApiError(ErrorKind::Unauthorized))?,
 			Ok(()) => http::Request::from_parts(parts, body),
 		};
 		match R::try_from_http_request(http_request, &path_args) {
-			Err(_) => Err(MApiReply(ErrorKind::BadJson)),
+			Err(_) => Err(MApiError(ErrorKind::BadJson)),
 			Ok(dt) => Ok(MApi { body: dt }),
 		}
 	}

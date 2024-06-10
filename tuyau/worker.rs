@@ -1,4 +1,4 @@
-use ruma::{RoomId, ServerName, UserId};
+use ruma::{RoomAliasId, RoomId, ServerName, UserId};
 
 use crate::setups::Setup;
 
@@ -22,14 +22,14 @@ pub struct Executor<'a, T: QueryExecutor> {
 }
 
 impl<'a, T: QueryExecutor> Executor<'a, T> {
-	pub fn new(query_executor: &'a T, room_id: &'a RoomId, user_id: &'a UserId) -> Self {
+	pub fn new(query_executor: &'a T, room_id: &'a RoomAliasId, user_id: &'a UserId) -> Self {
 		Self {
 			// =============================================================
 			keyserver: keyserver::Executor { query_executor },
 			state: state::Executor { query_executor },
 			timeline: timeline::Executor { query_executor },
 			// =============================================================
-			server_name: room_id.server_name().unwrap(),
+			server_name: room_id.server_name(),
 			setups: Setup { room_id, user_id },
 		}
 	}
