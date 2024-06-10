@@ -1,4 +1,4 @@
-use ruma::{RoomAliasId, RoomId, ServerName, UserId};
+use ruma::{RoomAliasId, ServerName, UserId};
 
 use crate::setups::Setup;
 
