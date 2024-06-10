@@ -7,6 +7,7 @@ pub trait QueryExecutor {
 	async fn select(&self, pdu_id: &EventId) -> MyResult<MaybePdu>;
 }
 
+#[derive(Clone)]
 pub struct Executor<'a, T: QueryExecutor> {
 	pub(super) query_executor: &'a T,
 }

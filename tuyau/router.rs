@@ -1,6 +1,12 @@
 use axum::extract::State;
 use ruma::{
-	api::{client::error::ErrorKind, federation::query::get_room_information, OutgoingResponse},
+	api::{
+		client::error::ErrorKind,
+		federation::query::get_room_information::v1::{
+			Request as GetRoomInfoRequest, Response as GetRoomInfoReply,
+		},
+		OutgoingResponse,
+	},
 	owned_room_id,
 };
 
@@ -15,14 +21,12 @@ use crate::{
 pub mod extract;
 pub mod reply;
 
-type GetRoomInfoReply = get_room_information::v1::Response;
-
 pub async fn get_room_information_route<'a, T: QueryExecutor>(
-	request: MApi<get_room_information::v1::Request>,
-	State(state): State<Executor<'a, T>>,
+	State(ctx): State<Executor<'a, T>>,
+	req: MApi<GetRoomInfoRequest>,
 ) -> Result<MApiReply<impl OutgoingResponse>, MApiError<ErrorKind>> {
 	// =====================================================================
-	if request.body.room_alias != state.setups.room_id {
+	if req.body.room_alias != ctx.setups.room_id {
 		return Err(MApiError(ErrorKind::NotFound));
 	}
 	// =====================================================================
