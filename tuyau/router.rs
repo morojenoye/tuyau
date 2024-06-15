@@ -31,7 +31,7 @@ pub async fn get_room_information_route<T: QueryExecutor>(
 	}
 	// =====================================================================
 	Ok(MApiReply(GetRoomInfoReply::new(
-		owned_room_id!("!ffffffff:stokejo.com"),
-		vec![owned_server_name!("stokejo.com")],
+		ctx.ident.clone(),
+		vec![ctx.server_name()],
 	)))
 }
