@@ -1,13 +1,10 @@
 use axum::extract::State;
-use ruma::{
-	api::{
-		client::error::ErrorKind,
-		federation::query::get_room_information::v1::{
-			Request as GetRoomInfoRequest, Response as GetRoomInfoReply,
-		},
-		OutgoingResponse,
+use ruma::api::{
+	client::error::ErrorKind,
+	federation::query::get_room_information::v1::{
+		Request as GetRoomInfoRequest, Response as GetRoomInfoReply,
 	},
-	owned_room_id, owned_server_name,
+	OutgoingResponse,
 };
 
 use crate::{
