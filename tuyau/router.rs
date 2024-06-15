@@ -21,12 +21,12 @@ use crate::{
 pub mod extract;
 pub mod reply;
 
-pub async fn get_room_information_route<'a, T: QueryExecutor>(
-	State(ctx): State<Executor<'a, T>>,
+pub async fn get_room_information_route<T: QueryExecutor>(
+	State(ctx): State<Executor<T>>,
 	req: MApi<GetRoomInfoRequest>,
 ) -> Result<MApiReply<impl OutgoingResponse>, MApiError<ErrorKind>> {
 	// =====================================================================
-	if req.body.room_alias != ctx.setups.room_id {
+	if req.body.room_alias != ctx.alias {
 		return Err(MApiError(ErrorKind::NotFound));
 	}
 	// =====================================================================

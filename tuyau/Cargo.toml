@@ -22,6 +22,7 @@ ruma = { git = "https://github.com/ruma/ruma.git", features = [
     "federation-api",
     "unstable-pdu",
     "server-util",
+    "rand",
 ], default-features = false }
 anyhow = "1"
 

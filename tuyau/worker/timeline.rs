@@ -1,6 +1,6 @@
 use ruma::{events::pdu::RoomV3Pdu, EventId};
 
-use crate::{models::MaybePdu, MyResult};
+use crate::{models::MaybePdu, MyResult, Ref};
 
 pub trait QueryExecutor {
 	async fn append(&self, pdu_id: &EventId, pdu: &RoomV3Pdu) -> MyResult<()>;
@@ -8,11 +8,11 @@ pub trait QueryExecutor {
 }
 
 #[derive(Clone)]
-pub struct Executor<'a, T: QueryExecutor> {
-	pub(super) query_executor: &'a T,
+pub struct Executor<T: QueryExecutor> {
+	pub(super) state: Ref<T>,
 }
 
-impl<'a, T: QueryExecutor> Executor<'a, T> {
+impl<T: QueryExecutor> Executor<T> {
 	pub async fn append(&self, pdu_id: &EventId, pdu: &RoomV3Pdu) {}
 	pub async fn select(&self, pdu_id: &EventId) {}
 }

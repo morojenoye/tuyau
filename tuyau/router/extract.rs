@@ -34,14 +34,14 @@ pub struct MApi<T> {
 }
 
 #[async_trait]
-impl<'a, R, T> FromRequest<Executor<'a, T>> for MApi<R>
+impl<R, T> FromRequest<Executor<T>> for MApi<R>
 where
 	R: IncomingRequest,
 	T: QueryExecutor,
 {
 	type Rejection = MApiError<ErrorKind>;
 
-	async fn from_request(req: Request<Body>, ctx: &Executor<'a, T>) -> MyResult<Self> {
+	async fn from_request(req: Request<Body>, ctx: &Executor<T>) -> MyResult<Self> {
 		// =================================================================
 
 		let AuthScheme::ServerSignatures = R::METADATA.authentication else {
@@ -56,7 +56,7 @@ where
 			Err(_) => Err(MApiError(ErrorKind::Unauthorized)),
 		}?;
 		let check = |dest: OwnedServerName| {
-			let differ: bool = dest != ctx.server_name;
+			let differ: bool = dest != ctx.server_name();
 			differ.then_some(MApiError(ErrorKind::Unauthorized))
 		};
 		match header.destination.map(check).flatten() {
@@ -99,7 +99,7 @@ where
 
 		// =================================================================
 
-		let server_name = ctx.server_name.to_string().into();
+		let server_name = ctx.server_name().to_string().into();
 		let origin = header.origin.to_string().into();
 
 		request_map.insert(keys[2].to_string(), server_name);
@@ -107,7 +107,7 @@ where
 
 		// =================================================================
 
-		let keyserver: &keyserver::Executor<'a, T> = &ctx.keyserver;
+		let keyserver: &keyserver::Executor<T> = &ctx.keyserver;
 		let server: &OwnedServerName = &header.origin;
 
 		let iter: _ = match keyserver.get_server_keys(server).await {

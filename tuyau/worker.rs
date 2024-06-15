@@ -1,37 +1,57 @@
-use ruma::{RoomAliasId, ServerName, UserId};
+use ruma::{OwnedRoomAliasId, OwnedRoomId, OwnedServerName, OwnedUserId, RoomId};
 
-use crate::setups::Setup;
+use crate::{MyResult, Ref};
 
 pub mod keyserver;
+pub mod setup;
 pub mod state;
 pub mod timeline;
 
 pub trait QueryExecutor:
-	keyserver::QueryExecutor + state::QueryExecutor + timeline::QueryExecutor + Sync
+	keyserver::QueryExecutor + state::QueryExecutor + timeline::QueryExecutor + Send + Sync
 {
 }
 
 #[derive(Clone)]
-pub struct Executor<'a, T: QueryExecutor> {
+pub struct Executor<T: QueryExecutor> {
 	// =====================================================================
-	pub keyserver: keyserver::Executor<'a, T>,
-	pub state: state::Executor<'a, T>,
-	pub timeline: timeline::Executor<'a, T>,
+	pub keyserver: keyserver::Executor<T>,
+	pub state: state::Executor<T>,
+	pub timeline: timeline::Executor<T>,
 	// =====================================================================
-	pub server_name: &'a ServerName,
-	pub setups: Setup<'a>,
+	pub alias: OwnedRoomAliasId,
+	pub admin: OwnedUserId,
+	// =====================================================================
+	pub ident: OwnedRoomId,
 }
 
-impl<'a, T: QueryExecutor> Executor<'a, T> {
-	pub fn new(query_executor: &'a T, room_id: &'a RoomAliasId, user_id: &'a UserId) -> Self {
-		Self {
+impl<T: QueryExecutor> Executor<T> {
+	pub fn new(state: Ref<T>, alias: OwnedRoomAliasId, admin: OwnedUserId) -> MyResult<Self> {
+		// Check room_alias_id and user_id
+		// Get room_id from db
+		// If setup table is empty create new entry
+		let ident = RoomId::new(alias.server_name());
+
+		Ok(Self {
 			// =============================================================
-			keyserver: keyserver::Executor { query_executor },
-			state: state::Executor { query_executor },
-			timeline: timeline::Executor { query_executor },
+			keyserver: keyserver::Executor {
+				state: state.clone(),
+			},
+			state: state::Executor {
+				state: state.clone(),
+			},
+			timeline: timeline::Executor {
+				state: state.clone(),
+			},
 			// =============================================================
-			server_name: room_id.server_name(),
-			setups: Setup { room_id, user_id },
-		}
+			alias,
+			admin,
+			// =============================================================
+			ident,
+		})
+	}
+
+	pub fn server_name(&self) -> OwnedServerName {
+		OwnedServerName::from(self.alias.server_name())
 	}
 }

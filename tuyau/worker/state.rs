@@ -1,6 +1,8 @@
+use crate::Ref;
+
 pub trait QueryExecutor {}
 
 #[derive(Clone)]
-pub struct Executor<'a, T: QueryExecutor> {
-	pub(super) query_executor: &'a T,
+pub struct Executor<T: QueryExecutor> {
+	pub(super) state: Ref<T>,
 }

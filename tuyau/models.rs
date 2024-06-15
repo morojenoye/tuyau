@@ -4,6 +4,7 @@ use sea_orm::{ConnectionTrait, DatabaseConnection, Schema};
 use crate::{models, worker::QueryExecutor, MyResult};
 
 pub mod keyserver;
+pub mod setup;
 pub mod state;
 pub mod timeline;
 

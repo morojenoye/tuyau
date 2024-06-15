@@ -7,26 +7,21 @@ use crate::{models::DefaultQueryExecutor, router::get_room_information_route, wo
 
 mod models;
 mod router;
-mod setups;
 mod worker;
 
 pub type MyResult<T> = anyhow::Result<T>;
+pub type Ref<T> = std::sync::Arc<T>;
 
 #[tokio::main]
 async fn main() -> MyResult<()> {
 	let inner = Database::connect("sqlite:tuyau.db3?mode=rwc").await?;
 
 	let (query_executor, room_id, user_id) = (
-		DefaultQueryExecutor::new(inner).await?,
+		Ref::new(DefaultQueryExecutor::new(inner).await?),
 		owned_room_alias_id!("#stokejo:stokejo.com"),
 		owned_user_id!("@mekosko:projectyo.network"),
 	);
-	let (query_executor, room_id, user_id) = (
-		Box::leak(Box::new(query_executor)),
-		Box::leak(Box::new(room_id)),
-		Box::leak(Box::new(user_id)),
-	);
-	let state = Executor::new(query_executor, room_id, user_id);
+	let state = Executor::new(query_executor, room_id, user_id)?;
 
 	let app = Router::new()
 		.route(
