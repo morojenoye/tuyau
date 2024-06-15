@@ -7,7 +7,7 @@ use ruma::{
 		},
 		OutgoingResponse,
 	},
-	owned_room_id,
+	owned_room_id, owned_server_name,
 };
 
 use crate::{
@@ -32,6 +32,6 @@ pub async fn get_room_information_route<'a, T: QueryExecutor>(
 	// =====================================================================
 	Ok(MApiReply(GetRoomInfoReply::new(
 		owned_room_id!("!ffffffff:stokejo.com"),
-		Vec::new(),
+		vec![owned_server_name!("stokejo.com")],
 	)))
 }
