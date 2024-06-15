@@ -15,7 +15,7 @@ use crate::{
 #[derive(Clone, Debug, DeriveEntityModel)]
 #[sea_orm(table_name = "timeline")]
 pub struct Model {
-	#[sea_orm(primary_key, unique)]
+	#[sea_orm(primary_key, unique, auto_increment = false)]
 	pub pdu_id: String,
 	pub pdu: String,
 }
@@ -39,6 +39,7 @@ impl timeline::QueryExecutor for DefaultQueryExecutor {
 
 		Ok(())
 	}
+
 	async fn select(&self, pdu_id: &EventId) -> MyResult<MaybePdu> {
 		let statement = Entity::find_by_id(pdu_id.to_string());
 

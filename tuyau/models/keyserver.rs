@@ -13,7 +13,7 @@ use crate::{models::DefaultQueryExecutor, worker::keyserver, MyResult};
 #[derive(Clone, Debug, DeriveEntityModel)]
 #[sea_orm(table_name = "keyserver")]
 pub struct Model {
-	#[sea_orm(primary_key, unique)]
+	#[sea_orm(primary_key, unique, auto_increment = false)]
 	pub server: String,
 	pub keys: String,
 }
