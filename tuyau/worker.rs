@@ -34,5 +34,4 @@ impl<'a, T: QueryExecutor> Executor<'a, T> {
 			setups: Setup { room_id, user_id },
 		}
 	}
-	pub fn get() {}
 }

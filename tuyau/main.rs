@@ -1,4 +1,4 @@
-use {sea_orm::DatabaseConnection, tokio::net::TcpListener};
+use {sea_orm::Database, tokio::net::TcpListener};
 
 use axum::{routing::get, Router};
 use ruma::{owned_room_alias_id, owned_user_id};
@@ -14,8 +14,10 @@ pub type MyResult<T> = anyhow::Result<T>;
 
 #[tokio::main]
 async fn main() -> MyResult<()> {
+	let inner = Database::connect("sqlite:tuyau.db3?mode=rwc").await?;
+
 	let (query_executor, room_id, user_id) = (
-		DefaultQueryExecutor::new(DatabaseConnection::Disconnected),
+		DefaultQueryExecutor::new(inner).await?,
 		owned_room_alias_id!("#stokejo:stokejo.com"),
 		owned_user_id!("@mekosko:projectyo.network"),
 	);

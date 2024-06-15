@@ -1,12 +1,13 @@
-use {ruma::events::pdu, sea_orm::DatabaseConnection};
+use ruma::events::pdu::RoomV3Pdu;
+use sea_orm::{ConnectionTrait, DatabaseConnection, Schema};
 
-use crate::worker::QueryExecutor;
+use crate::{models, worker::QueryExecutor, MyResult};
 
 pub mod keyserver;
 pub mod state;
 pub mod timeline;
 
-pub type MaybePdu = Option<pdu::RoomV3Pdu>;
+pub type MaybePdu = Option<RoomV3Pdu>;
 
 #[derive(Clone)]
 pub struct DefaultQueryExecutor {
@@ -14,8 +15,18 @@ pub struct DefaultQueryExecutor {
 }
 
 impl DefaultQueryExecutor {
-	pub fn new(inner: DatabaseConnection) -> Self {
-		DefaultQueryExecutor { inner }
+	pub async fn new(inner: DatabaseConnection) -> MyResult<Self> {
+		let backend = inner.get_database_backend();
+		let query = Schema::new(backend);
+
+		for mut statement in [
+			query.create_table_from_entity(models::keyserver::Entity),
+			query.create_table_from_entity(models::timeline::Entity),
+		] {
+			let statement = backend.build(statement.if_not_exists());
+			inner.execute(statement).await?;
+		}
+		Ok(DefaultQueryExecutor { inner })
 	}
 }
 
