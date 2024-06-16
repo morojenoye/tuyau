@@ -3,6 +3,8 @@ use sea_orm::{
 	EnumIter, PrimaryKeyTrait,
 };
 
+use crate::{models::DefaultQueryExecutor, worker::setup};
+
 // =========================================================================
 
 #[derive(Clone, Debug, DeriveEntityModel)]
@@ -18,3 +20,7 @@ pub struct Model {
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
+
+// =========================================================================
+
+impl setup::QueryExecutor for DefaultQueryExecutor {}

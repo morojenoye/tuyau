@@ -1,3 +1,5 @@
+use std::marker;
+
 use ruma::{OwnedRoomAliasId, OwnedRoomId, OwnedServerName, OwnedUserId, RoomId};
 
 use crate::{MyResult, Ref};
@@ -8,7 +10,12 @@ pub mod state;
 pub mod timeline;
 
 pub trait QueryExecutor:
-	keyserver::QueryExecutor + state::QueryExecutor + timeline::QueryExecutor + Send + Sync
+	keyserver::QueryExecutor
+	+ setup::QueryExecutor
+	+ state::QueryExecutor
+	+ timeline::QueryExecutor
+	+ marker::Send
+	+ marker::Sync
 {
 }
 
