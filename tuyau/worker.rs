@@ -8,6 +8,12 @@ pub mod keyserver;
 pub mod state;
 pub mod timeline;
 
+pub struct SetupBundle {
+	pub alias: OwnedRoomAliasId,
+	pub admin: OwnedUserId,
+	pub ident: OwnedRoomId,
+}
+
 pub trait QueryExecutor:
 	keyserver::QueryExecutor
 	+ state::QueryExecutor
@@ -17,12 +23,6 @@ pub trait QueryExecutor:
 {
 	async fn new(&self, setup: SetupBundle) -> MyResult<()>;
 	async fn get(&self) -> MyResult<Maybe<SetupBundle>>;
-}
-
-pub struct SetupBundle {
-	pub alias: OwnedRoomAliasId,
-	pub admin: OwnedUserId,
-	pub ident: OwnedRoomId,
 }
 
 #[derive(Clone)]
@@ -40,8 +40,10 @@ pub struct Executor<T: QueryExecutor> {
 
 impl<T: QueryExecutor> Executor<T> {
 	pub async fn new(state: Ref<T>, alias: OwnedRoomAliasId, admin: OwnedUserId) -> MyResult<Self> {
-		let maybe_setup: _ = QueryExecutor::get(state.as_ref()).await?;
-
+		let maybe_setup: Option<SetupBundle> = {
+			// =============================================================
+			QueryExecutor::get(state.as_ref()).await?
+		};
 		let ident: OwnedRoomId = if let Some(setup) = maybe_setup {
 			// =============================================================
 			if setup.alias != alias || setup.admin != admin {
@@ -51,15 +53,14 @@ impl<T: QueryExecutor> Executor<T> {
 			setup.ident
 		} else {
 			// =============================================================
-			let ident = RoomId::new(alias.server_name());
-			let state = state.as_ref();
+			let ident: OwnedRoomId = RoomId::new(alias.server_name());
 			// =============================================================
-			let setup = SetupBundle {
+			let setup: SetupBundle = SetupBundle {
 				alias: alias.clone(),
 				admin: admin.clone(),
 				ident: ident.clone(),
 			};
-			QueryExecutor::new(state, setup).await?;
+			QueryExecutor::new(state.as_ref(), setup).await?;
 			// =============================================================
 			ident
 		};
