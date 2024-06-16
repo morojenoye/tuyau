@@ -31,6 +31,7 @@ impl DefaultQueryExecutor {
 		for mut statement in [
 			query.create_table_from_entity(models::keyserver::Entity),
 			query.create_table_from_entity(models::timeline::Entity),
+			query.create_table_from_entity(models::Entity),
 		] {
 			let statement = backend.build(statement.if_not_exists());
 			inner.execute(statement).await?;
