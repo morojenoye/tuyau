@@ -1,14 +1,22 @@
 use ruma::events::pdu::RoomV3Pdu;
-use sea_orm::{ConnectionTrait, DatabaseConnection, Schema};
+use sea_orm::{
+	ActiveModelBehavior, ConnectionTrait, DatabaseConnection, DeriveEntityModel, DerivePrimaryKey,
+	DeriveRelation, EntityTrait, EnumIter, PrimaryKeyTrait, Schema,
+};
 
-use crate::{models, worker::QueryExecutor, MyResult};
+use crate::{
+	models,
+	worker::{QueryExecutor, SetupBundle},
+	Maybe, MyResult,
+};
 
 pub mod keyserver;
-pub mod setup;
 pub mod state;
 pub mod timeline;
 
-pub type MaybePdu = Option<RoomV3Pdu>;
+pub type MaybePdu = Maybe<RoomV3Pdu>;
+
+// =========================================================================
 
 #[derive(Clone)]
 pub struct DefaultQueryExecutor {
@@ -31,4 +39,30 @@ impl DefaultQueryExecutor {
 	}
 }
 
-impl QueryExecutor for DefaultQueryExecutor {}
+// =========================================================================
+
+#[derive(Clone, Debug, DeriveEntityModel)]
+#[sea_orm(table_name = "setup")]
+pub struct Model {
+	#[sea_orm(primary_key, unique, auto_increment = false)]
+	alias: String,
+	admin: String,
+	ident: String,
+}
+
+#[derive(Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}
+
+// =========================================================================
+
+impl QueryExecutor for DefaultQueryExecutor {
+	async fn new(&self, setup: SetupBundle) -> MyResult<()> {
+		todo!()
+	}
+
+	async fn get(&self) -> MyResult<Maybe<SetupBundle>> {
+		todo!()
+	}
+}

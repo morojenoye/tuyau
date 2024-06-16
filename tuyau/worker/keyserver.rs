@@ -6,7 +6,7 @@ use crate::{MyResult, Ref};
 
 #[async_trait]
 pub trait QueryExecutor {
-	async fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys>;
+	async fn get(&self, server: &ServerName) -> MyResult<ServerSigningKeys>;
 }
 
 #[derive(Clone)]
@@ -15,7 +15,7 @@ pub struct Executor<T: QueryExecutor> {
 }
 
 impl<T: QueryExecutor> Executor<T> {
-	pub async fn get_server_keys(&self, request: &ServerName) -> MyResult<ServerSigningKeys> {
+	pub async fn get(&self, request: &ServerName) -> MyResult<ServerSigningKeys> {
 		let s = ("https", request.host(), "/_matrix/key/v2/server");
 		let s = format!("{}://{}:8448{}", s.0, s.1, s.2);
 		Ok(reqwest::get(s).await?.json().await?)

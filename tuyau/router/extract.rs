@@ -110,7 +110,7 @@ where
 		let keyserver: &keyserver::Executor<T> = &ctx.keyserver;
 		let server: &OwnedServerName = &header.origin;
 
-		let iter: _ = match keyserver.get_server_keys(server).await {
+		let iter: _ = match keyserver.get(server).await {
 			Ok(server_keys) => server_keys.verify_keys.into_iter(),
 			Err(_) => Err(MApiError(ErrorKind::Unauthorized))?,
 		};

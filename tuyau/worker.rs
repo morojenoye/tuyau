@@ -1,22 +1,28 @@
-use std::marker;
+use {anyhow::anyhow, std::marker};
 
 use ruma::{OwnedRoomAliasId, OwnedRoomId, OwnedServerName, OwnedUserId, RoomId};
 
-use crate::{MyResult, Ref};
+use crate::{Maybe, MyResult, Ref};
 
 pub mod keyserver;
-pub mod setup;
 pub mod state;
 pub mod timeline;
 
 pub trait QueryExecutor:
 	keyserver::QueryExecutor
-	+ setup::QueryExecutor
 	+ state::QueryExecutor
 	+ timeline::QueryExecutor
 	+ marker::Send
 	+ marker::Sync
 {
+	async fn new(&self, setup: SetupBundle) -> MyResult<()>;
+	async fn get(&self) -> MyResult<Maybe<SetupBundle>>;
+}
+
+pub struct SetupBundle {
+	pub alias: OwnedRoomAliasId,
+	pub admin: OwnedUserId,
+	pub ident: OwnedRoomId,
 }
 
 #[derive(Clone)]
@@ -33,12 +39,30 @@ pub struct Executor<T: QueryExecutor> {
 }
 
 impl<T: QueryExecutor> Executor<T> {
-	pub fn new(state: Ref<T>, alias: OwnedRoomAliasId, admin: OwnedUserId) -> MyResult<Self> {
-		// Check room_alias_id and user_id
-		// Get room_id from db
-		// If setup table is empty create new entry
-		let ident = RoomId::new(alias.server_name());
+	pub async fn new(state: Ref<T>, alias: OwnedRoomAliasId, admin: OwnedUserId) -> MyResult<Self> {
+		let maybe_setup: _ = QueryExecutor::get(state.as_ref()).await?;
 
+		let ident: OwnedRoomId = if let Some(setup) = maybe_setup {
+			// =============================================================
+			if setup.alias != alias || setup.admin != admin {
+				return Err(anyhow!("aboba"));
+			}
+			// =============================================================
+			setup.ident
+		} else {
+			// =============================================================
+			let ident = RoomId::new(alias.server_name());
+			let state = state.as_ref();
+			// =============================================================
+			let setup = SetupBundle {
+				alias: alias.clone(),
+				admin: admin.clone(),
+				ident: ident.clone(),
+			};
+			QueryExecutor::new(state, setup).await?;
+			// =============================================================
+			ident
+		};
 		Ok(Self {
 			// =============================================================
 			keyserver: keyserver::Executor {

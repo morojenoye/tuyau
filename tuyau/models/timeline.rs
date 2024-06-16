@@ -28,7 +28,7 @@ impl ActiveModelBehavior for ActiveModel {}
 // =========================================================================
 
 impl timeline::QueryExecutor for DefaultQueryExecutor {
-	async fn append(&self, pdu_id: &EventId, pdu: &RoomV3Pdu) -> MyResult<()> {
+	async fn new(&self, pdu_id: &EventId, pdu: &RoomV3Pdu) -> MyResult<()> {
 		let pdu = serde_json::to_string(pdu)?;
 
 		let pdu = ActiveModel {
@@ -40,7 +40,7 @@ impl timeline::QueryExecutor for DefaultQueryExecutor {
 		Ok(())
 	}
 
-	async fn select(&self, pdu_id: &EventId) -> MyResult<MaybePdu> {
+	async fn get(&self, pdu_id: &EventId) -> MyResult<MaybePdu> {
 		let statement = Entity::find_by_id(pdu_id.to_string());
 
 		let pdu = statement.one(&self.inner).await?;

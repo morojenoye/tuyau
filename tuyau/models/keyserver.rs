@@ -27,7 +27,7 @@ impl ActiveModelBehavior for ActiveModel {}
 
 #[async_trait]
 impl keyserver::QueryExecutor for DefaultQueryExecutor {
-	async fn get_server_keys(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
+	async fn get(&self, server: &ServerName) -> MyResult<ServerSigningKeys> {
 		todo!()
 	}
 }
