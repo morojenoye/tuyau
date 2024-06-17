@@ -1,7 +1,8 @@
-use ruma::events::pdu::RoomV3Pdu;
+use ruma::{events::pdu::RoomV3Pdu, RoomAliasId, RoomId, UserId};
 use sea_orm::{
-	ActiveModelBehavior, ConnectionTrait, DatabaseConnection, DeriveEntityModel, DerivePrimaryKey,
-	DeriveRelation, EntityTrait, EnumIter, PrimaryKeyTrait, Schema,
+	ActiveModelBehavior, ActiveModelTrait, ConnectionTrait, DatabaseConnection, DeriveEntityModel,
+	DerivePrimaryKey, DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait,
+	Schema,
 };
 
 use crate::{
@@ -60,10 +61,30 @@ impl ActiveModelBehavior for ActiveModel {}
 
 impl QueryExecutor for DefaultQueryExecutor {
 	async fn new(&self, setup: SetupBundle) -> MyResult<()> {
-		todo!()
+		// =================================================================
+		let setup: ActiveModel = Model {
+			alias: setup.alias.to_string(),
+			admin: setup.admin.to_string(),
+			ident: setup.ident.to_string(),
+		}
+		.into_active_model();
+
+		setup.insert(&self.inner).await?;
+		Ok(())
 	}
 
 	async fn get(&self) -> MyResult<Maybe<SetupBundle>> {
-		todo!()
+		// =================================================================
+		let setup: _ = Entity::find().one(&self.inner);
+
+		let Some(setup) = setup.await? else {
+			return Ok(None);
+		};
+		let setup = SetupBundle {
+			alias: RoomAliasId::parse(setup.alias)?,
+			admin: UserId::parse(setup.admin)?,
+			ident: RoomId::parse(setup.ident)?,
+		};
+		Ok(Some(setup))
 	}
 }
