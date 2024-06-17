@@ -40,28 +40,25 @@ pub struct Executor<T: QueryExecutor> {
 
 impl<T: QueryExecutor> Executor<T> {
 	pub async fn new(state: Ref<T>, alias: OwnedRoomAliasId, admin: OwnedUserId) -> MyResult<Self> {
-		let maybe_setup: Option<SetupBundle> = {
+		let maybe_setup = {
 			// =============================================================
 			QueryExecutor::get(state.as_ref()).await?
 		};
-		let ident: OwnedRoomId = if let Some(setup) = maybe_setup {
+		let ident = if let Some(setup) = maybe_setup {
 			// =============================================================
 			if setup.alias != alias || setup.admin != admin {
 				return Err(anyhow!("aboba"));
 			}
-			// =============================================================
 			setup.ident
 		} else {
 			// =============================================================
-			let ident: OwnedRoomId = RoomId::new(alias.server_name());
-			// =============================================================
-			let setup: SetupBundle = SetupBundle {
+			let ident = RoomId::new(alias.server_name());
+			let setup = SetupBundle {
 				alias: alias.clone(),
 				admin: admin.clone(),
 				ident: ident.clone(),
 			};
 			QueryExecutor::new(state.as_ref(), setup).await?;
-			// =============================================================
 			ident
 		};
 		Ok(Self {
