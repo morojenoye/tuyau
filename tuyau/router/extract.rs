@@ -81,7 +81,7 @@ where
 			Path::<PathArgs>::from_request_parts(&mut parts, &()).await.unwrap(),
 			serde_json::from_slice::<CanonicalJsonValue>(&body).ok(),
 		);
-		value.map(|value: _| request_map.insert("content".to_string(), value));
+		value.map(|value| request_map.insert("content".to_string(), value));
 
 		// =================================================================
 
