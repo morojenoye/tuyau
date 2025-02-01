@@ -21,7 +21,7 @@ async fn main() -> MyResult<()> {
 	let (query_executor, room_id, user_id) = (
 		Ref::new(DefaultQueryExecutor::new(inner).await?),
 		owned_room_alias_id!("#stokejo:stokejo.com"),
-		owned_user_id!("@mekosko:projectyo.network"),
+		owned_user_id!("@mekosko:morojenoye.com"),
 	);
 	let state = Executor::new(query_executor, room_id, user_id).await?;
 
