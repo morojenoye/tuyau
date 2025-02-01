@@ -32,7 +32,7 @@ async fn main() -> MyResult<()> {
 		)
 		.with_state(state);
 
-	let tcp = TcpListener::bind(":::2727").await?;
+	let tcp = TcpListener::bind("127.0.0.1:2727").await?;
 
 	axum::serve(tcp, app).await?;
 
