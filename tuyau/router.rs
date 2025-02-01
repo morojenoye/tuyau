@@ -19,16 +19,16 @@ pub mod extract;
 pub mod reply;
 
 pub async fn get_room_information_route<T: QueryExecutor>(
-	State(ctx): State<Executor<T>>,
+	State(context): State<Executor<T>>,
 	req: MApi<GetRoomInfoRequest>,
 ) -> Result<MApiReply<impl OutgoingResponse>, MApiError<ErrorKind>> {
 	// =====================================================================
-	if req.body.room_alias != ctx.alias {
+	if req.body.room_alias != context.alias {
 		return Err(MApiError(ErrorKind::NotFound));
 	}
 	// =====================================================================
 	Ok(MApiReply(GetRoomInfoReply::new(
-		ctx.ident.clone(),
-		vec![ctx.server_name()],
+		context.ident.clone(),
+		vec![context.server_name()],
 	)))
 }

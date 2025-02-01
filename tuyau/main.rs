@@ -16,7 +16,7 @@ pub type MyResult<T> = anyhow::Result<T>;
 
 #[tokio::main]
 async fn main() -> MyResult<()> {
-	let inner = Database::connect("sqlite:tuyau.db3?mode=rwc").await?;
+	let inner = Database::connect("sqlite:tuyaus?mode=rwc").await?;
 
 	let (query_executor, room_id, user_id) = (
 		Ref::new(DefaultQueryExecutor::new(inner).await?),

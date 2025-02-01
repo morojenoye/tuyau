@@ -59,7 +59,7 @@ where
 			let differ: bool = dest != ctx.server_name();
 			differ.then_some(MApiError(ErrorKind::Unauthorized))
 		};
-		match header.destination.map(check).flatten() {
+		match header.destination.and_then(check) {
 			Some(response) => return Err(response),
 			None => (),
 		}
@@ -110,7 +110,7 @@ where
 		let keyserver: &keyserver::Executor<T> = &ctx.keyserver;
 		let server: &OwnedServerName = &header.origin;
 
-		let iter: _ = match keyserver.get(server).await {
+		let iter = match keyserver.get(server).await {
 			Ok(server_keys) => server_keys.verify_keys.into_iter(),
 			Err(_) => Err(MApiError(ErrorKind::Unauthorized))?,
 		};
@@ -121,7 +121,7 @@ where
 
 		// =================================================================
 
-		let http_request: _ = match verify_json(&p_key_map, &request_map) {
+		let http_request = match verify_json(&p_key_map, &request_map) {
 			Err(_) => Err(MApiError(ErrorKind::Unauthorized))?,
 			Ok(()) => http::Request::from_parts(parts, body),
 		};

@@ -75,7 +75,7 @@ impl QueryExecutor for DefaultQueryExecutor {
 
 	async fn get(&self) -> MyResult<Maybe<SetupBundle>> {
 		// =================================================================
-		let setup: _ = Entity::find().one(&self.inner);
+		let setup = Entity::find().one(&self.inner);
 
 		let Some(setup) = setup.await? else {
 			return Ok(None);

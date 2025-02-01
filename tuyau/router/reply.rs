@@ -10,7 +10,7 @@ where
 	fn into_response(self) -> Reply {
 		match self.0.try_into_http_response::<bytes::BytesMut>() {
 			Ok(r) => r.map(|b| b.freeze().into()),
-			Err(error) => Err(error).unwrap(),
+			Err(error) => panic!("{:?}", error),
 		}
 	}
 }
