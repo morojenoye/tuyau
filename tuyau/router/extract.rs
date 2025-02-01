@@ -87,7 +87,7 @@ where
 
 		let signatures: BTreeMap<String, CanonicalJsonValue> = BTreeMap::from([(
 			header.key.to_string(),
-			CanonicalJsonValue::String(header.sig),
+			CanonicalJsonValue::String(header.sig.to_string()),
 		)]);
 		let signatures: BTreeMap<String, CanonicalJsonValue> = BTreeMap::from([(
 			header.origin.to_string(),

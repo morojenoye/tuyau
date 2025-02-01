@@ -17,7 +17,7 @@ reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 
 serde_json = "1"
-ruma = { git = "https://github.com/ruma/ruma.git", features = [
+ruma = { version = "0.12", features = [
     "client-api",
     "federation-api",
     "unstable-pdu",
