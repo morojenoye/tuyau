@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 
-use async_trait::async_trait;
 use axum::{
 	body::{self, Body},
 	extract::{FromRequest, FromRequestParts, Path},
@@ -33,7 +32,6 @@ pub struct MApi<T> {
 	pub body: T,
 }
 
-#[async_trait]
 impl<R, T> FromRequest<Executor<T>> for MApi<R>
 where
 	R: IncomingRequest,

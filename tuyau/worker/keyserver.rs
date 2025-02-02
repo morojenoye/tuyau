@@ -1,10 +1,7 @@
-use async_trait::async_trait;
-
 use ruma::{api::federation::discovery::ServerSigningKeys, ServerName};
 
 use crate::{MyResult, Ref};
 
-#[async_trait]
 pub trait QueryExecutor {
 	async fn get(&self, server: &ServerName) -> MyResult<ServerSigningKeys>;
 }

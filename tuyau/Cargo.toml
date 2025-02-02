@@ -26,14 +26,13 @@ ruma = { version = "0.12", features = [
 ], default-features = false }
 anyhow = "1"
 
-axum = "0.7"
-axum-extra = { version = "0.9", features = [
+axum = "0.8"
+axum-extra = { version = "0.10", features = [
     "typed-header",
 ], default-features = false }
 http = "1"
 
-async-trait = "0.1"
-sea-orm = { version = "0.12", features = [
+sea-orm = { version = "1", features = [
     "runtime-tokio-rustls",
     "sqlx-sqlite",
     "macros",
